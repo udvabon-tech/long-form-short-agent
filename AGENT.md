@@ -362,53 +362,92 @@ python3 Scripts/create_reelN_timestamps.py
 
 ---
 
-### STEP 4.4: Generate ASS Subtitle File
+### STEP 4.4: Generate TikTok-Style ASS Subtitle File
 
-**Purpose:** Convert word timestamps to professional subtitle format with styling
+**Purpose:** Convert word timestamps to TikTok-style subtitle format with title + single-line subtitles
 
 **Command:**
 ```bash
 # From project directory
 cd "Projects/$PROJECT"
-python3 ../../Scripts/text_to_enhanced_ass.py Processing/reelN.txt Processing/reelN_enhanced.ass
+
+# Generate TikTok-style ASS (title at top + single-line subtitles at bottom)
+python3 ../../Scripts/text_to_tiktok_ass.py \
+  Processing/reelN.txt \
+  Processing/reelN_tiktok.ass \
+  "আপনার শর্ট টাইটেল এখানে" \
+  "0:01:14.00"
 ```
+
+**Arguments:**
+1. `Processing/reelN.txt` - Input text with word timestamps
+2. `Processing/reelN_tiktok.ass` - Output ASS subtitle file
+3. `"Short Title"` - 3-5 word Bengali title (appears at top, fixed throughout video)
+4. `"H:MM:SS.CC"` - Video duration in ASS format
 
 **What this does:**
 - Parses word timestamps from `Processing/reelN.txt`
-- Groups words into 2-3 word subtitle blocks
-- Applies 75pt Noto Sans Bengali font
-- Adds karaoke timing with blue highlighting every 4th word
-- Sets bottom positioning (240px margin from bottom)
-- Calculates precise timing for each subtitle block
+- Creates fixed title at top (68pt, bold, stays entire video)
+- Groups words into single-line subtitle events (3-4 words each)
+- Applies 68pt Noto Sans Bengali font for maximum readability
+- Title position: Top (Y=120px)
+- Subtitle position: Bottom (Y=130px from bottom, single line)
+- No line wrapping (WrapStyle: 2)
 
-**Output:** `Projects/$PROJECT/Processing/reelN_enhanced.ass`
+**Output:** `Projects/$PROJECT/Processing/reelN_tiktok.ass`
 
 **ASS File Features:**
-- Font: Noto Sans Bengali, 75pt
-- Colors: White text (#FFFFFF), Blue highlights (#0000FF)
-- Position: Bottom aligned, 240px margin
-- Timing: Word-by-word karaoke effects
-- Resolution: 608x1080
+- **Title Style:** Noto Sans Bengali, 68pt, bold, fixed at top
+- **Subtitle Style:** Noto Sans Bengali, 68pt, bold, single line at bottom
+- **Colors:** White text (#FFFFFF) with semi-transparent dark backgrounds
+- **Title Duration:** Entire video (fixed)
+- **Subtitle Duration:** Changes with speech timing
+- **Resolution:** 608x1080 (vertical)
+
+**Title Guidelines (3-5 words max):**
+- Use question format for engagement: "কী হবে?", "হচ্ছে?"
+- Front-load hook words
+- Examples:
+  - ✅ "আপনার মস্তিষ্ক অকেজো হচ্ছে?" (4 words)
+  - ✅ "AI নিয়ন্ত্রণ হারালে কী হবে?" (5 words)
+  - ✅ "সেরা ব্রেইন মাত্র ২৫০০ টাকায়" (5 words)
+  - ❌ "AI ব্যবহারে আপনার মস্তিষ্ক কি অকেজো হয়ে যাচ্ছে" (13 words - too long)
+
+**Alternative (Old Multi-line Karaoke Style):**
+If you prefer the old colorful karaoke style with multi-line subtitles:
+```bash
+python3 ../../Scripts/text_to_enhanced_ass.py Processing/reelN.txt Processing/reelN_enhanced.ass
+```
+- Font: 75pt Noto Sans Bengali
+- Colors: Green/Red highlights
+- Multi-line display
+- Word-by-word karaoke effects
 
 ---
 
 ### STEP 4.5: Hardburn Subtitles to Video
 
-**Purpose:** Permanently embed subtitles into video pixels
+**Purpose:** Permanently embed TikTok-style subtitles into video pixels
 
 **Command:**
 ```bash
 # From project directory
 cd "Projects/$PROJECT"
+
+# Hardburn TikTok-style subtitles (title + single-line)
 ffmpeg -i Processing/reelN.mp4 \
-  -vf "ass=Processing/reelN_enhanced.ass" \
+  -vf "ass=Processing/reelN_tiktok.ass" \
   -c:a copy \
-  Processing/reelN_huge_font.mkv
+  "Output/Final_রিল_শিরোনাম.mkv"
 ```
 
 **What this does:**
 1. Reads `Processing/reelN.mp4` frame by frame
-2. Renders ASS subtitles with all styling (font, colors, karaoke effects)
+2. Renders TikTok-style ASS subtitles with all styling:
+   - Fixed title at top (68pt, bold)
+   - Single-line subtitles at bottom (68pt, bold)
+   - Proper Bengali text rendering with HarfBuzz
+   - Semi-transparent dark backgrounds for readability
 3. Burns Bengali text permanently onto video pixels
 4. Re-encodes video with subtitles as part of the image
 5. Keeps audio stream as-is (copy codec)

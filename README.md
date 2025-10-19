@@ -6,9 +6,10 @@ Automated pipeline to extract viral-worthy reels from Bengali podcast videos wit
 
 - **AI-Powered Transcription**: Uses Gemini 2.5 Pro API for accurate Bengali transcription with millisecond-precision timestamps
 - **Viral Moment Detection**: AI analysis identifies the most engaging segments
-- **Professional Subtitles**: Word-by-word karaoke highlighting with proper Bengali text rendering
-- **Title Overlays**: Beautiful Bengali title cards with HarfBuzz text shaping
-- **Mobile-Optimized**: Vertical 608x1080 format perfect for Instagram Reels, Facebook Reels, and YouTube Shorts
+- **TikTok-Style Formatting**: Short titles (3-5 words) at top + single-line subtitles at bottom
+- **Professional Subtitles**: Large 68pt Bengali text with semi-transparent backgrounds for maximum readability
+- **Title Overlays**: Fixed title at top throughout video, optimized for mobile scrolling
+- **Mobile-Optimized**: Vertical 608x1080 format perfect for TikTok, Instagram Reels, Facebook Reels, and YouTube Shorts
 
 ## Prerequisites
 
@@ -132,61 +133,58 @@ Edit the script to set:
 - Start and end timestamps
 - Output file: `Projects/$PROJECT/Processing/reel1.txt`
 
-### Step 7: Generate ASS Subtitles
+### Step 7: Generate TikTok-Style ASS Subtitles
 
 ```bash
 # From project directory
 cd "Projects/$PROJECT"
-python3 ../../Scripts/text_to_enhanced_ass.py Processing/reel1.txt Processing/reel1_enhanced.ass
+
+# Generate TikTok-style subtitles (title + single-line)
+python3 ../../Scripts/text_to_tiktok_ass.py \
+  Processing/reel1.txt \
+  Processing/reel1_tiktok.ass \
+  "আপনার শর্ট টাইটেল" \
+  "0:01:14.00"
 ```
 
-### Step 8: Hardburn Subtitles
+**Arguments:**
+- `Processing/reel1.txt` - Input timestamped text
+- `Processing/reel1_tiktok.ass` - Output subtitle file
+- `"আপনার শর্ট টাইটেল"` - 3-5 word title (fixed at top)
+- `"0:01:14.00"` - Video duration
+
+**Processing Notes:**
+- Lines auto-split into compact 3–4 word subtitles, keeping text inside the frame.
+
+**Title Examples (3-5 words max):**
+- ✅ "আপনার মস্তিষ্ক অকেজো হচ্ছে?" (4 words)
+- ✅ "AI নিয়ন্ত্রণ হারালে কী হবে?" (5 words)
+- ✅ "সেরা ব্রেইন মাত্র ২৫০০ টাকায়" (5 words)
+- ❌ "AI ব্যবহারে আপনার মস্তিষ্ক কি অকেজো" (Too long)
+
+### Step 8: Hardburn TikTok-Style Subtitles
 
 ```bash
+# From project directory
+cd "Projects/$PROJECT"
+
 ffmpeg -i Processing/reel1.mp4 \
-  -vf "ass=Processing/reel1_enhanced.ass" \
+  -vf "ass=Processing/reel1_tiktok.ass" \
   -c:a copy \
-  Processing/reel1_huge_font.mkv
+  "Output/Final_আপনার_শর্ট_টাইটেল.mkv"
 ```
 
-### Step 9: Create Title Overlay
-
-Create `Projects/$PROJECT/Processing/title_overlay.ass`:
-
-```
-[Script Info]
-ScriptType: v4.00+
-PlayResX: 608
-PlayResY: 1080
-
-[V4+ Styles]
-Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Title,Noto Sans Bengali,42,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,3,3,0,8,20,20,1020,1
-
-[Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:00:00.00,0:00:05.00,Title,,0,0,0,,{\pos(304,60)\an2\bord5\3c&H000000&\4a&H55&}YOUR_BENGALI_TITLE_HERE
-```
-
-Replace `YOUR_BENGALI_TITLE_HERE` with your Bengali title.
-
-### Step 10: Apply Title
-
-```bash
-# From project directory
-cd "Projects/$PROJECT"
-ffmpeg -y -i Processing/reel1_huge_font.mkv \
-  -vf "ass=Processing/title_overlay.ass" \
-  -c:a copy \
-  "Output/YOUR_BENGALI_TITLE_WITH_UNDERSCORES.mkv"
-```
+This creates your final reel with:
+- Fixed title at top (68pt, bold)
+- Single-line subtitles at bottom (68pt, bold)
+- Ready for TikTok, Instagram, Facebook, YouTube Shorts
 
 **Example:**
 ```bash
-ffmpeg -y -i Processing/reel1_huge_font.mkv \
-  -vf "ass=Processing/title_overlay.ass" \
+ffmpeg -i Processing/reel1.mp4 \
+  -vf "ass=Processing/reel1_tiktok.ass" \
   -c:a copy \
-  "Output/আপনার_ব্রেইনে_জং_পড়বে.mkv"
+  "Output/Final_আপনার_মস্তিষ্ক_অকেজো_হচ্ছে.mkv"
 ```
 
 ## File Naming Convention
@@ -204,12 +202,13 @@ Use Bengali title with underscores replacing spaces:
 - Example: পড়বে displayed as পড়বএ (vowel detached)
 - ASS filter uses libass + HarfBuzz for proper rendering
 
-### Subtitle Styling
+### TikTok-Style Subtitle Formatting
 
-- **Subtitle Font Size**: 75pt (bottom of screen)
-- **Title Font Size**: 42pt (top of screen)
-- **Title Duration**: 5 seconds
-- **Word Highlighting**: Every 4th word in red, others in green
+- **Title Font Size**: 68pt (top of screen, fixed throughout video)
+- **Subtitle Font Size**: 68pt (bottom of screen, single line)
+- **Title Style**: 3-5 words, bold, question format preferred
+- **Subtitle Style**: Changes with speech, no line wrapping
+- **Background**: Semi-transparent dark boxes for readability
 
 ### Video Specifications
 
