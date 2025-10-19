@@ -1,0 +1,17 @@
+# Long Form to Shorts - Python Dependencies
+
+# Google Generative AI for transcription
+google-generativeai>=0.3.0
+
+# Note: FFmpeg is required but must be installed separately
+# Install FFmpeg:
+# - macOS: brew install ffmpeg
+# - Ubuntu/Debian: sudo apt-get install ffmpeg
+# - Windows: Download from https://ffmpeg.org/download.html
+
+# Ensure your FFmpeg installation includes:
+# - libass (for ASS subtitle rendering with Bengali text support)
+# - HarfBuzz (for complex text shaping)
+#
+# Check with: ffmpeg -version
+# Look for: --enable-libass in configuration

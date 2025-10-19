@@ -1,0 +1,126 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║           WELCOME TO LONG FORM TO SHORTS                         ║
+║           Bengali Podcast Reel Generator                         ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+🎬 What is this?
+
+A complete, automated pipeline to transform long Bengali podcasts
+into viral-worthy vertical reels with:
+  • AI-powered transcription (Gemini 2.5 Pro)
+  • Word-by-word karaoke subtitles
+  • Professional Bengali title overlays
+  • Mobile-optimized 608x1080 format
+
+
+📚 Where to start?
+
+1. FIRST TIME USERS:
+   → Open: QUICKSTART.md
+   → 10-minute guide to your first reel
+
+2. DETAILED SETUP:
+   → Open: README.md
+   → Complete documentation with troubleshooting
+
+3. ADVANCED USERS:
+   → Open: AGENT.md
+   → Full technical reference and customization
+
+4. FOLDER OVERVIEW:
+   → Open: FOLDER_CONTENTS.md
+   → Explanation of all files and scripts
+
+
+⚡ Quick Setup (30 seconds)
+
+1. Install dependencies:
+   pip install -r requirements.txt
+
+2. Get Gemini API key:
+   https://aistudio.google.com/apikey
+
+3. Set API key:
+   export GEMINI_API_KEY="your-key-here"
+
+4. Start creating:
+   Follow QUICKSTART.md
+
+
+📁 Folder Structure (Project-Based)
+
+Long Form to Shorts/
+├── START_HERE.txt              ← You are here
+├── QUICKSTART.md               ← Start here for first reel
+├── README.md                   ← Full documentation
+├── AGENT.md                    ← Technical reference
+├── FILE_ORGANIZATION.md        ← Organization guide
+├── requirements.txt            ← Python dependencies
+│
+├── Projects/                   ← 🆕 All content projects
+│   └── Project_Name/           ← Each podcast gets own folder
+│       ├── Source/             ← Original video
+│       ├── Transcripts/        ← Audio & transcription
+│       ├── Analysis/           ← AI analysis
+│       ├── Processing/         ← Intermediate files
+│       └── Output/             ← Final reels ✅
+│
+├── Scripts/                    ← Shared automation scripts
+│   ├── transcribe_audio_v2.py
+│   ├── text_to_enhanced_ass.py
+│   ├── analyze_transcript.py
+│   └── [other scripts]
+│
+└── Templates/                  ← Shared template files
+
+
+🎯 What you need:
+
+✓ Python 3.7+
+✓ FFmpeg (brew install ffmpeg on macOS)
+✓ Gemini API key (free tier available)
+✓ Noto Sans Bengali font (pre-installed on macOS)
+
+
+🚀 Quick Test
+
+Want to test immediately? Run:
+
+  ./Scripts/workflow_example.sh
+
+(Edit configuration at top of file first)
+
+
+💡 Tips
+
+• Create new project for each podcast: mkdir -p "Projects/Name"/{Source,Transcripts,Analysis,Processing,Output}
+• Each project is self-contained and organized
+• Final reels saved in: Projects/ProjectName/Output/
+• Use Bengali titles with underscores: আপনার_শিরোনাম.mkv
+• Each reel takes ~5-10 minutes to create
+• Gemini API cost: ~$0.90 per hour of podcast
+
+
+⚠️ Important
+
+• ALWAYS use ASS format for Bengali text (not drawtext)
+• Ensure FFmpeg has libass support for proper Bengali rendering
+• Keep your Gemini API key secure
+
+
+📞 Need Help?
+
+1. Check QUICKSTART.md for step-by-step guide
+2. See README.md for detailed troubleshooting
+3. Review AGENT.md for technical explanations
+
+
+═══════════════════════════════════════════════════════════════════
+
+Ready to create your first viral reel?
+
+👉 Open QUICKSTART.md and follow the 10 steps!
+
+═══════════════════════════════════════════════════════════════════

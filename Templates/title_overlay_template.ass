@@ -1,0 +1,35 @@
+[Script Info]
+; Template for Bengali title overlay
+; Replace YOUR_BENGALI_TITLE_HERE with your actual title
+ScriptType: v4.00+
+PlayResX: 608
+PlayResY: 1080
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Title,Noto Sans Bengali,42,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,3,3,0,8,20,20,1020,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:05.00,Title,,0,0,0,,{\pos(304,60)\an2\bord5\3c&H000000&\4a&H55&}YOUR_BENGALI_TITLE_HERE
+
+; Style Explanation:
+; - Fontname: Noto Sans Bengali (ensure this font is installed)
+; - Fontsize: 42 (adjust as needed)
+; - PrimaryColour: &H00FFFFFF (white)
+; - Outline: 3px black border for visibility
+; - Alignment: 8 (top center)
+; - MarginV: 1020 (20px from top)
+;
+; Position Explanation:
+; - \pos(304,60): Centers title horizontally at 304px (half of 608px width)
+; - \an2: Anchor point at bottom center of text
+; - \bord5: 5px border thickness
+; - \3c&H000000&: Black border color
+; - \4a&H55&: Semi-transparent shadow
+;
+; Duration: Title shows for 5 seconds (0:00:00.00 to 0:00:05.00)
+;
+; IMPORTANT: Use ASS format for Bengali text, NOT FFmpeg drawtext filter
+; drawtext will break Bengali characters (vowels detach, conjuncts split)
+; ASS uses libass + HarfBuzz for proper text shaping

@@ -1,0 +1,69 @@
+# Large Video and Audio Files
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.mp3
+*.wav
+*.flac
+
+# API Keys and Environment Variables
+.env
+.env.local
+*.key
+*_API_KEY*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Project Data Folders (except structure)
+Projects/*/Source/*
+Projects/*/Transcripts/*.mp3
+Projects/*/Transcripts/*.wav
+Projects/*/Processing/*
+Projects/*/Output/*.mkv
+Projects/*/Output/*.mp4
+
+# Keep folder structure but ignore contents
+!Projects/*/Source/.gitkeep
+!Projects/*/Transcripts/.gitkeep
+!Projects/*/Analysis/.gitkeep
+!Projects/*/Processing/.gitkeep
+!Projects/*/Output/.gitkeep
+
+# Temporary Files
+*.tmp
+*.temp
+*.log
+*.swp
+*.swo
+*~
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Input and Archive (large files)
+Input/*.mp4
+Input/*.mkv
+Input/*.mov
+Archive/*
+
+# ASS subtitle working files (large)
+*.ass.bak
+
+# Keep example/template files
+!Templates/*.ass
+!*.example.*
