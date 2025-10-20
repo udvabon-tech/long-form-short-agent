@@ -1,17 +1,21 @@
-# Long Form to Shorts - Python Dependencies
+# Long Form to Shorts - Version 3.0 Dependencies
+# Agentic System Architecture
 
-# Google Generative AI for transcription
-google-generativeai>=0.3.0
+# Core Dependencies
+google-generativeai>=0.8.0  # Gemini API for transcription and analysis
+pyyaml>=6.0                  # Configuration management
 
-# Note: FFmpeg is required but must be installed separately
-# Install FFmpeg:
-# - macOS: brew install ffmpeg
-# - Ubuntu/Debian: sudo apt-get install ffmpeg
-# - Windows: Download from https://ffmpeg.org/download.html
+# Optional but recommended
+# rich>=13.0                 # Enhanced CLI output (uncomment to enable)
+# tqdm>=4.65                 # Progress bars (uncomment to enable)
 
-# Ensure your FFmpeg installation includes:
-# - libass (for ASS subtitle rendering with Bengali text support)
-# - HarfBuzz (for complex text shaping)
-#
-# Check with: ffmpeg -version
-# Look for: --enable-libass in configuration
+# System Requirements (must be installed separately):
+# - FFmpeg with libass support: brew install ffmpeg (macOS) or sudo apt install ffmpeg (Linux)
+# - Python 3.8 or higher
+# - Noto Sans Bengali font for subtitle rendering
+
+# Development Dependencies (optional)
+# pytest>=7.0                # Testing framework
+# black>=23.0                # Code formatting
+# mypy>=1.0                  # Type checking
+# pylint>=2.17               # Code linting

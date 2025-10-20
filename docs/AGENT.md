@@ -301,92 +301,63 @@ def extract_transcript_segment(transcript_file, start_time, end_time):
 
 ### STEP 4.3: Create Word-Level Timestamp File
 
-**Purpose:** Convert transcript to word-by-word timestamps in required format
+**Recommended:** Drive everything from the new CLI (no manual Python editing required).
 
-**Format Required:** `word1 [0m5s123ms] word2 [0m6s456ms] word3 [0m7s789ms]`
-
-**Python Script:**
-```python
-def create_word_timestamps(transcript_lines, start_time, output_file):
-    """Create word-level timestamp file for subtitle generation"""
-
-    def time_to_seconds(time_str):
-        time_str = time_str.strip('[]')
-        parts = time_str.split(':')
-        if len(parts) == 3:
-            return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
-        elif len(parts) == 2:
-            return int(parts[0]) * 60 + float(parts[1])
-        return 0
-
-    # Calculate offset (subtract start time to begin at 0:00)
-    offset_seconds = time_to_seconds(start_time)
-
-    words_with_timestamps = []
-
-    for timestamp, text in transcript_lines:
-        line_sec = time_to_seconds(f"[{timestamp}]")
-        adjusted_sec = line_sec - offset_seconds
-
-        # Split text into words
-        words = text.split()
-        word_duration = 0.4  # 400ms per word (approximate)
-
-        for i, word in enumerate(words):
-            word_time = adjusted_sec + (i * word_duration)
-            total_seconds = int(word_time)
-            milliseconds = int((word_time % 1) * 1000)
-
-            words_with_timestamps.append(f"{word} [0m{total_seconds}s{milliseconds}ms]")
-
-    # Write to file
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(' '.join(words_with_timestamps))
-
-    print(f"✅ Created {output_file} with {len(words_with_timestamps)} words")
-```
-
-**Output:** `Projects/$PROJECT/Processing/reelN.txt`
-
-**Example Content:**
-```
-আবার [0m0s0ms] আপনি [0m0s400ms] এই [0m0s800ms] এআই [0m1s200ms] টুলগুলা [0m1s600ms] যেমন [0m2s0ms] ধরেন [0m2s400ms]
-```
-
-**Command:**
 ```bash
-# From main directory
-python3 Scripts/create_reelN_timestamps.py
-# Edit script to set input/output paths for your project
+cd "Projects/$PROJECT"
+
+# Direct CLI usage
+python ../../Scripts/create_reel_timestamps.py \
+  Transcripts/audio_30min_transcription.txt \
+  --start "00:15:47.364" \
+  --end "00:17:01.374" \
+  --output Processing/reel1_words.txt
+
+# Config-driven usage (after filling project_config.json)
+python ../../Scripts/create_reel_timestamps.py \
+  --config project_config.json \
+  --reel-id reel1
 ```
+
+The script:
+- Slices the transcript to the exact window
+- Spreads words using the actual transcript timing (no more fixed 400 ms guess)
+- Outputs `word [0mXsYYYms]` format → `Processing/reelN_words.txt`
 
 ---
 
 ### STEP 4.4: Generate TikTok-Style ASS Subtitle File
 
-**Purpose:** Convert word timestamps to TikTok-style subtitle format with title + single-line subtitles
-
-**Command:**
 ```bash
-# From project directory
 cd "Projects/$PROJECT"
 
-# Generate TikTok-style ASS (title at top + single-line subtitles at bottom)
-python3 ../../Scripts/text_to_tiktok_ass.py \
-  Processing/reelN.txt \
-  Processing/reelN_tiktok.ass \
-  "আপনার শর্ট টাইটেল এখানে" \
-  "0:01:14.00"
+# Direct CLI usage
+python ../../Scripts/text_to_tiktok_ass.py \
+  Processing/reel1_words.txt \
+  --output Processing/reel1_tiktok.ass \
+  --title "আপনার মস্তিষ্ক অকেজো হচ্ছে?" \
+  --video-duration "0:01:14.00"
+
+# Config-driven usage
+python ../../Scripts/text_to_tiktok_ass.py \
+  Processing/reel1_words.txt \
+  --config project_config.json \
+  --reel-id reel1
 ```
 
+Flags worth tweaking:
+- `--max-words-per-line` → keep subtitles concise (default 4)
+- `--title-duration` → control how long the hook stays on screen (default 5 s)
+- `--title-position-y` / `--subtitle-position-y` → adjust safe zones per platform needs
+
 **Arguments:**
-1. `Processing/reelN.txt` - Input text with word timestamps
+1. `Processing/reelN_words.txt` - Input text with word timestamps
 2. `Processing/reelN_tiktok.ass` - Output ASS subtitle file
 3. `"Short Title"` - 3-5 word Bengali title (appears at top, fixed throughout video)
 4. `"H:MM:SS.CC"` - Video duration in ASS format
 
 **What this does:**
-- Parses word timestamps from `Processing/reelN.txt`
+- Parses word timestamps from `Processing/reelN_words.txt`
 - Creates fixed title at top (68pt, bold, stays entire video)
 - Groups words into single-line subtitle events (3-4 words each)
 - Applies 68pt Noto Sans Bengali font for maximum readability
@@ -416,7 +387,9 @@ python3 ../../Scripts/text_to_tiktok_ass.py \
 **Alternative (Old Multi-line Karaoke Style):**
 If you prefer the old colorful karaoke style with multi-line subtitles:
 ```bash
-python3 ../../Scripts/text_to_enhanced_ass.py Processing/reelN.txt Processing/reelN_enhanced.ass
+python3 ../../Scripts/text_to_enhanced_ass.py \
+  Processing/reelN_words.txt \
+  Processing/reelN_enhanced.ass
 ```
 - Font: 75pt Noto Sans Bengali
 - Colors: Green/Red highlights
@@ -663,8 +636,9 @@ Long Form to Shorts/
         │
         ├── Processing/                    # Intermediate files
         │   ├── reel1.mp4
-        │   ├── reel1.txt
+        │   ├── reel1_words.txt
         │   ├── reel1_enhanced.ass
+        │   ├── reel1_tiktok.ass
         │   ├── reel1_huge_font.mkv
         │   ├── title_overlay_reel1.ass
         │   └── [...same for reel2, reel3]
@@ -693,9 +667,9 @@ When user provides video file, agent should:
 - [ ] **Step 3:** Analyze transcript and create cut directions → `Projects/$PROJECT/Analysis/REEL_CUT_DIRECTIONS.md`
 - [ ] **Step 4:** For each reel (loop through all):
   - [ ] 4.1: Extract video segment → `Processing/reelN.mp4`
-  - [ ] 4.2: Extract transcript segment for this reel
-  - [ ] 4.3: Create word-level timestamps → `Processing/reelN.txt`
-  - [ ] 4.4: Generate ASS subtitle file → `Processing/reelN_enhanced.ass`
+  - [ ] 4.2: Confirm transcript window + metadata (timestamps, title, config entry)
+  - [ ] 4.3: Create word-level timestamps → `Processing/reelN_words.txt`
+  - [ ] 4.4: Generate ASS subtitle file → `Processing/reelN_tiktok.ass` (or `reelN_enhanced.ass` for karaoke style)
   - [ ] 4.5: Hardburn subtitles → `Processing/reelN_huge_font.mkv`
   - [ ] 4.6: Add title overlay → `Output/[BENGALI_TITLE].mkv` ✅
   - [ ] 4.7: Verify output dimensions and duration

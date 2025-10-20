@@ -1,0 +1,317 @@
+# Long Form to Shorts - Bengali Podcast Reel Generator
+
+Automated pipeline to extract viral-worthy reels from Bengali podcast videos with professional subtitles and title overlays.
+
+## Features
+
+- **AI-Powered Transcription**: Uses Gemini 2.5 Pro API for accurate Bengali transcription with millisecond-precision timestamps
+- **Viral Moment Detection**: AI analysis identifies the most engaging segments
+- **TikTok-Style Formatting**: Short titles (3-5 words) at top + single-line subtitles at bottom
+- **Professional Subtitles**: Large 68pt Bengali text with semi-transparent backgrounds for maximum readability
+- **Title Overlays**: Fixed title at top throughout video, optimized for mobile scrolling
+- **Mobile-Optimized**: Vertical 608x1080 format perfect for TikTok, Instagram Reels, Facebook Reels, and YouTube Shorts
+
+## Prerequisites
+
+### 1. FFmpeg Installation
+
+**macOS:**
+```bash
+brew install ffmpeg
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install ffmpeg
+```
+
+**Windows:**
+Download from https://ffmpeg.org/download.html
+
+**Verify Installation:**
+```bash
+ffmpeg -version
+```
+Ensure your build includes `--enable-libass` for Bengali text support.
+
+### 2. Python Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Gemini API Key
+
+1. Get your API key from https://aistudio.google.com/apikey
+2. Set environment variable:
+
+**macOS/Linux:**
+```bash
+export GEMINI_API_KEY="your-api-key-here"
+```
+
+**Windows:**
+```cmd
+set GEMINI_API_KEY=your-api-key-here
+```
+
+### 4. Bengali Font
+
+**macOS:**
+- Font is pre-installed: Noto Sans Bengali Variable Font
+- Location: `/System/Library/Fonts/Supplemental/Noto Sans Bengali.ttc`
+
+**Linux:**
+```bash
+sudo apt-get install fonts-noto-bengali
+```
+
+**Windows:**
+Download from: https://fonts.google.com/noto/specimen/Noto+Sans+Bengali
+
+## Quick Start (Project-Based)
+
+### Step 1: Create Project
+
+```bash
+PROJECT="My_Podcast_Name"
+mkdir -p "Projects/$PROJECT"/{Source,Transcripts,Analysis,Processing,Output}
+```
+
+### Step 2: Add Your Video
+
+```bash
+cp ~/path/to/podcast.mp4 "Projects/$PROJECT/Source/"
+cd "Projects/$PROJECT"
+```
+
+### Step 3: Extract Audio
+
+```bash
+ffmpeg -i Source/podcast.mp4 -vn -acodec libmp3lame -q:a 2 -t 1800 Transcripts/audio_30min.mp3
+```
+
+### Step 4: Transcribe with Gemini
+
+```bash
+cd ../..  # Back to main directory
+export GEMINI_API_KEY="your-key"
+python Scripts/transcribe_audio_v2.py "Projects/$PROJECT/Transcripts/audio_30min.mp3"
+```
+
+This creates `Projects/$PROJECT/Transcripts/audio_30min_transcription.txt` with detailed timestamps.
+
+### Step 4: Analyze for Viral Moments
+
+Ask Gemini to analyze the transcript and identify the best reel-worthy segment. Provide:
+- Start timestamp: `[HH:MM:SS.mmm]`
+- End timestamp: `[HH:MM:SS.mmm]`
+- Bengali title for the reel
+
+### Step 5: Extract Video Segment
+
+```bash
+# From project directory
+cd "Projects/$PROJECT"
+ffmpeg -i Source/podcast.mp4 \
+  -ss HH:MM:SS.mmm \
+  -to HH:MM:SS.mmm \
+  -vf "scale=608:1080:force_original_aspect_ratio=increase,crop=608:1080" \
+  -c:a copy \
+  Processing/reel1.mp4
+```
+
+### Step 6: Create Word-Level Timestamps
+
+```bash
+# From project directory
+python ../../Scripts/create_reel_timestamps.py \
+  Transcripts/audio_30min_transcription.txt \
+  --start "00:15:47.364" \
+  --end "00:17:01.374" \
+  --output Processing/reel1_words.txt
+```
+
+The script now uses CLI arguments (no manual editing needed) and automatically spaces each word between the supplied timestamps. Use `python Scripts/create_reel_timestamps.py --help` for the full list of options.
+
+### Step 7: Generate TikTok-Style ASS Subtitles
+
+```bash
+python ../../Scripts/text_to_tiktok_ass.py \
+  Processing/reel1_words.txt \
+  --output Processing/reel1_tiktok.ass \
+  --title "আপনার মস্তিষ্ক অকেজো হচ্ছে?" \
+  --video-duration "0:01:14.00"
+```
+
+Key flags:
+- `--max-words-per-line` (default 4) controls subtitle chunking.
+- `--title-duration` controls how long the fixed title stays on screen (default 5s).
+- `--title-position-y` / `--subtitle-position-y` tweak vertical placement if needed.
+
+**Title Examples (3-5 words max)**
+- ✅ "আপনার মস্তিষ্ক অকেজো হচ্ছে?"
+- ✅ "AI নিয়ন্ত্রণ হারালে কী হবে?"
+- ✅ "সেরা ব্রেইন মাত্র ২৫০০ টাকায়"
+- ❌ "AI ব্যবহারে আপনার মস্তিষ্ক কি অকেজো" (Too long)
+
+### Step 8: Hardburn TikTok-Style Subtitles
+
+```bash
+# From project directory
+cd "Projects/$PROJECT"
+
+ffmpeg -i Processing/reel1.mp4 \
+  -vf "ass=Processing/reel1_tiktok.ass" \
+  -c:a copy \
+  "Output/Final_আপনার_শর্ট_টাইটেল.mkv"
+```
+
+This creates your final reel with:
+- Fixed title at top (68pt, bold)
+- Single-line subtitles at bottom (68pt, bold)
+- Ready for TikTok, Instagram, Facebook, YouTube Shorts
+
+**Example:**
+```bash
+ffmpeg -i Processing/reel1.mp4 \
+  -vf "ass=Processing/reel1_tiktok.ass" \
+  -c:a copy \
+  "Output/Final_আপনার_মস্তিষ্ক_অকেজো_হচ্ছে.mkv"
+```
+
+## File Naming Convention
+
+Use Bengali title with underscores replacing spaces:
+- ✅ `আপনার_ব্রেইনে_জং_পড়বে.mkv`
+- ❌ `আপনার ব্রেইনে জং পড়বে.mkv` (spaces cause issues)
+
+## Configuration-Driven Workflow (Optional)
+
+If you prefer to keep reel metadata in one place, copy `Templates/project_config.example.json`
+to your project folder, update the values, and point the scripts to it:
+
+```bash
+cp Templates/project_config.example.json Projects/$PROJECT/project_config.json
+# edit the JSON with your timestamps, titles, and output paths
+```
+
+Then run the helpers without manually retyping values:
+
+```bash
+python Scripts/create_reel_timestamps.py --config Projects/$PROJECT/project_config.json --reel-id reel1
+python Scripts/text_to_tiktok_ass.py Processing/reel1_words.txt --config Projects/$PROJECT/project_config.json --reel-id reel1
+```
+
+The configuration feeds:
+- Transcript path, reel start/end, and default output files
+- Title text, video duration, and screen positions
+- Optional title/subtitle copy for downstream tooling
+
+## Important Notes
+
+### Bengali Text Rendering
+
+- **Always use ASS subtitles** for Bengali text, never FFmpeg's `drawtext` filter
+- `drawtext` doesn't support HarfBuzz text shaping and will break Bengali characters
+- Example: পড়বে displayed as পড়বএ (vowel detached)
+- ASS filter uses libass + HarfBuzz for proper rendering
+
+### TikTok-Style Subtitle Formatting
+
+- **Title Font Size**: 68pt (top of screen, fixed throughout video)
+- **Subtitle Font Size**: 68pt (bottom of screen, single line)
+- **Title Style**: 3-5 words, bold, question format preferred
+- **Subtitle Style**: Changes with speech, no line wrapping
+- **Background**: Semi-transparent dark boxes for readability
+
+### Video Specifications
+
+- **Resolution**: 608x1080 (vertical)
+- **Format**: Mobile-optimized for social media
+- **Aspect Ratio**: 9:16
+
+## Troubleshooting
+
+### Broken Bengali Characters
+
+If you see broken Bengali text (vowels detached, conjuncts split):
+- **Cause**: Using FFmpeg drawtext filter
+- **Solution**: Use ASS subtitle format instead
+- Check `AGENT.md` for detailed explanation
+
+### API Key Issues
+
+If transcription fails:
+```bash
+echo $GEMINI_API_KEY  # Verify key is set
+export GEMINI_API_KEY="your-key-here"  # Set if missing
+```
+
+### Font Not Found
+
+If font errors occur:
+- **macOS**: Use `/System/Library/Fonts/Supplemental/Noto Sans Bengali.ttc`
+- **Linux**: Install with `sudo apt-get install fonts-noto-bengali`
+- **Windows**: Download and install from Google Fonts
+
+### FFmpeg Not Found
+
+```bash
+which ffmpeg  # Check if installed
+ffmpeg -version  # Verify libass support
+```
+
+## File Organization
+
+This project uses a **project-based structure** where each podcast gets its own folder:
+
+```
+Long Form to Shorts/
+├── Projects/               # All content projects
+│   ├── Project_Name_1/     # Each project is self-contained
+│   │   ├── Source/         # Original video
+│   │   ├── Transcripts/    # Audio & transcription
+│   │   ├── Analysis/       # AI analysis
+│   │   ├── Processing/     # Intermediate files
+│   │   └── Output/         # Final reels ✅
+│   └── Project_Name_2/
+├── Scripts/                # Shared automation scripts
+└── Templates/              # Shared templates
+```
+
+**Create New Project:**
+```bash
+PROJECT="My_Podcast_Name"
+mkdir -p "Projects/$PROJECT"/{Source,Transcripts,Analysis,Processing,Output}
+```
+
+See `FILE_ORGANIZATION.md` for:
+- Complete project structure
+- Project naming conventions
+- Managing multiple projects
+- Archive and cleanup instructions
+
+## Complete Documentation
+
+See `AGENT.md` for:
+- Detailed step-by-step pipeline
+- Technical explanations
+- Advanced customization options
+- Examples and use cases
+
+## Support
+
+For issues or questions:
+1. Check `AGENT.md` for detailed documentation
+2. Verify all prerequisites are installed
+3. Ensure Gemini API key is set correctly
+4. Check FFmpeg includes libass support
+
+## License
+
+This tool is for creating social media content from Bengali podcasts. Ensure you have rights to the source material.
+
+---
+
+**Happy Reel Making! 🎬**

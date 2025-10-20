@@ -1,49 +1,24 @@
 #!/usr/bin/env python3
 """
-Bangla Audio Transcription using Gemini API
-Alternative approach using direct file upload
+Bangla audio transcription via the Gemini API.
 """
 
-import os
-import sys
+from __future__ import annotations
+
+import argparse
 from pathlib import Path
+
 import google.generativeai as genai
 
+from utils import (
+    ScriptError,
+    ensure_readable_file,
+    ensure_writable_parent,
+    load_required_env_var,
+    echo_error_and_exit,
+)
 
-def transcribe_audio(audio_file_path, api_key):
-    """
-    Transcribe Bangla audio using Gemini
-
-    Args:
-        audio_file_path: Path to the audio file
-        api_key: Gemini API key
-
-    Returns:
-        str: Transcribed text
-    """
-    # Setup API
-    genai.configure(api_key=api_key)
-
-    # Verify file exists
-    if not os.path.exists(audio_file_path):
-        raise FileNotFoundError(f"Audio file not found: {audio_file_path}")
-
-    # Get file info
-    file_path = Path(audio_file_path)
-    file_size_mb = file_path.stat().st_size / (1024 * 1024)
-    print(f"Processing: {file_path.name}")
-    print(f"File size: {file_size_mb:.2f} MB")
-
-    # Read audio file
-    print("Reading audio file...")
-    with open(audio_file_path, 'rb') as f:
-        audio_data = f.read()
-
-    # Create model instance - using Gemini 2.5 Pro
-    model = genai.GenerativeModel('gemini-2.5-pro')
-
-    # Create prompt for Bangla transcription with detailed timestamps
-    prompt = """Please transcribe this audio file completely and accurately with detailed timestamps. The audio is in Bangla (Bengali) language.
+DEFAULT_PROMPT = """Please transcribe this audio file completely and accurately with detailed timestamps. The audio is in Bangla (Bengali) language.
 
 Requirements:
 - Provide complete transcription of all spoken content in Bangla script (বাংলা)
@@ -61,63 +36,118 @@ Format example:
 
 Transcription:"""
 
-    print("Sending to Gemini API for transcription...")
 
-    # Generate transcription with inline audio data
-    response = model.generate_content([
-        prompt,
-        {
-            'mime_type': 'audio/mpeg',
-            'data': audio_data
-        }
-    ])
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Transcribe Bengali audio with millisecond timestamps using Gemini."
+    )
+    parser.add_argument(
+        "audio",
+        type=Path,
+        help="Path to the input audio file (mp3, wav, etc.)",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="Optional path for the transcription output file. "
+        "Defaults to <audio>_transcription.txt in the same directory.",
+    )
+    parser.add_argument(
+        "--model",
+        default="gemini-2.5-pro",
+        help="Gemini model identifier to use (default: gemini-2.5-pro).",
+    )
+    parser.add_argument(
+        "--prompt",
+        type=Path,
+        help="Optional custom prompt file to override the default transcription prompt.",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Allow overwriting the output file if it already exists.",
+    )
+    return parser.parse_args()
 
-    return response.text
+
+def read_prompt(prompt_path: Path | None) -> str:
+    if not prompt_path:
+        return DEFAULT_PROMPT
+
+    prompt_path = ensure_readable_file(prompt_path, "prompt file")
+    return prompt_path.read_text(encoding="utf-8")
 
 
-def main():
-    """Main function to handle command line usage"""
-    # Get API key from environment or user input
-    api_key = os.environ.get('GEMINI_API_KEY')
+def transcribe_audio(
+    audio_path: Path,
+    output_path: Path,
+    api_key: str,
+    model_name: str,
+    prompt_text: str,
+) -> None:
+    audio_path = ensure_readable_file(audio_path, "audio file")
+    output_path = ensure_writable_parent(output_path)
 
-    if not api_key:
-        api_key = input("Enter your Gemini API key: ").strip()
-        if not api_key:
-            print("Error: API key is required")
-            sys.exit(1)
+    file_size_mb = audio_path.stat().st_size / (1024 * 1024)
+    print(f"🎧 Processing: {audio_path.name} ({file_size_mb:.2f} MB)")
 
-    # Get audio file path
-    if len(sys.argv) > 1:
-        audio_file = sys.argv[1]
-    else:
-        audio_file = input("Enter the path to your audio file: ").strip()
+    audio_data = audio_path.read_bytes()
 
-    if not audio_file:
-        print("Error: Audio file path is required")
-        sys.exit(1)
+    print("🤖 Connecting to Gemini…")
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel(model_name)
 
+    print("📝 Requesting transcription… this can take a few moments.")
+    response = model.generate_content(
+        [
+            prompt_text,
+            {"mime_type": "audio/mpeg", "data": audio_data},
+        ]
+    )
+
+    if not getattr(response, "text", "").strip():
+        raise ScriptError("Gemini response did not include transcription text.")
+
+    output_path.write_text(response.text, encoding="utf-8")
+    print(f"✅ Transcription saved to {output_path}")
+
+    # Provide a quick sanity check by printing the first timestamp.
+    first_line = response.text.splitlines()[0] if response.text else ""
+    if first_line:
+        print(f"🔎 First line: {first_line}")
+
+
+def main() -> None:
+    args = parse_args()
     try:
-        # Transcribe
-        transcription = transcribe_audio(audio_file, api_key)
+        api_key = load_required_env_var("GEMINI_API_KEY")
+        prompt_text = read_prompt(args.prompt)
 
-        # Display result
-        print("\n" + "="*80)
-        print("TRANSCRIPTION")
-        print("="*80)
-        print(transcription)
-        print("="*80)
+        if args.output:
+            output_path = args.output
+        else:
+            output_path = args.audio.with_name(f"{args.audio.stem}_transcription.txt")
 
-        # Save to file
-        output_file = Path(audio_file).stem + "_transcription.txt"
-        with open(output_file, 'w', encoding='utf-8') as f:
-            f.write(transcription)
-        print(f"\nTranscription saved to: {output_file}")
+        output_path = output_path.expanduser().resolve()
+        if output_path.exists() and not args.overwrite:
+            raise ScriptError(
+                f"Output file already exists: {output_path}\n"
+                "Re-run with --overwrite to replace it."
+            )
 
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+        transcribe_audio(
+            audio_path=args.audio,
+            output_path=output_path,
+            api_key=api_key,
+            model_name=args.model,
+            prompt_text=prompt_text,
+        )
+
+    except ScriptError as error:
+        echo_error_and_exit(str(error))
+    except Exception as error:  # pragma: no cover - unforeseen runtime errors
+        echo_error_and_exit(f"Unexpected error: {error}")
 
 
 if __name__ == "__main__":

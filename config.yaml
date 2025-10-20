@@ -1,0 +1,144 @@
+# Long Form to Shorts - Central Configuration
+# Version: 3.0 (Agentic System)
+
+system:
+  version: "3.0.0"
+  project_root: "."
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_dir: "logs"
+  max_workers: 4  # Parallel processing workers
+
+api:
+  gemini:
+    model: "gemini-2.5-pro"
+    max_retries: 3
+    timeout_seconds: 300
+    rate_limit_delay: 1.0
+
+video:
+  # Output specifications
+  output_format: "mkv"
+  codec: "h264"
+  audio_codec: "aac"
+
+  # Vertical format options
+  formats:
+    tiktok:
+      width: 608
+      height: 1080
+      aspect_ratio: "9:16"
+    instagram:
+      width: 1080
+      height: 1920
+      aspect_ratio: "9:16"
+
+  default_format: "tiktok"
+
+  # Quality settings
+  quality:
+    crf: 23  # Lower = better quality (18-28 recommended)
+    preset: "medium"  # ultrafast, fast, medium, slow, slower
+    audio_bitrate: "128k"
+
+subtitle:
+  # Font settings
+  font_family: "Noto Sans Bengali"
+  title_font_size: 68
+  subtitle_font_size: 68
+
+  # Positioning (pixels from edge)
+  title_position_y: 120
+  subtitle_position_y: 960
+
+  # Timing
+  title_duration_seconds: 5.0
+  max_words_per_line: 3
+  min_line_duration_ms: 800
+  minimum_gap_ms: 120
+
+  # Styling
+  text_color: "#FFFFFF"
+  outline_color: "#000000"
+  background_opacity: 0.8
+  bold: true
+
+transcription:
+  # Audio extraction
+  audio_format: "mp3"
+  audio_quality: 2  # 0 (best) to 9 (worst) for VBR
+  max_duration_seconds: 1800  # 30 minutes
+
+  # Timestamp precision
+  timestamp_format: "[HH:MM:SS.mmm]"
+  min_segment_duration_seconds: 0.25
+
+analysis:
+  # Viral reel detection
+  max_reels: 3
+  ideal_duration:
+    min_seconds: 30
+    max_seconds: 90
+
+  hook_types:
+    - "Mind-Blowing Stat"
+    - "Fear/Shock"
+    - "Problem-Solution"
+    - "Contrarian"
+    - "Emotional"
+
+  # Quality thresholds
+  min_viral_potential: 3  # Stars (1-5)
+
+pipeline:
+  # Automated workflow stages
+  stages:
+    - audio_extraction
+    - transcription
+    - analysis
+    - segment_extraction
+    - timestamp_generation
+    - subtitle_creation
+    - subtitle_hardburn
+    - finalization
+
+  # Stage-specific settings
+  validation:
+    check_file_exists: true
+    check_file_size: true
+    check_duration: true
+    check_dimensions: true
+
+  cleanup:
+    keep_intermediate_files: true
+    archive_after_days: 30
+
+# Default project template
+project_template:
+  directories:
+    - Source
+    - Transcripts
+    - Analysis
+    - Processing
+    - Output
+    - Logs
+
+  required_files:
+    - project_config.json
+    - .gitignore
+
+# Error handling
+error_handling:
+  max_retries: 3
+  retry_delay_seconds: 2
+  exponential_backoff: true
+  continue_on_error: false
+  save_checkpoints: true
+
+# Performance monitoring
+monitoring:
+  enabled: true
+  track_stage_timing: true
+  track_file_sizes: true
+  track_api_calls: true
+  export_metrics: true
+  metrics_file: "metrics.json"

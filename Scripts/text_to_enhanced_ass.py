@@ -1,26 +1,132 @@
 #!/usr/bin/env python3
+"""
+Convert timestamped words into karaoke-style ASS subtitles.
+"""
+
+from __future__ import annotations
+
+import argparse
 import re
-import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Iterable, List, Sequence
 
-def parse_timestamp(ts_str):
-    """Convert timestamp like '0m0s175ms' to milliseconds"""
-    match = re.match(r'(\d+)m(\d+)s(\d+)ms', ts_str)
-    if match:
-        minutes = int(match.group(1))
-        seconds = int(match.group(2))
-        milliseconds = int(match.group(3))
-        return (minutes * 60 + seconds) * 1000 + milliseconds
-    return 0
+from utils import (
+    ScriptError,
+    echo_error_and_exit,
+    ensure_readable_file,
+    ensure_writable_parent,
+    milliseconds_to_ass_time,
+    parse_relative_timestamp,
+)
 
-def ms_to_ass_time(ms):
-    """Convert milliseconds to ASS time format H:MM:SS.CC"""
-    hours = ms // 3600000
-    minutes = (ms % 3600000) // 60000
-    seconds = (ms % 60000) // 1000
-    centiseconds = (ms % 1000) // 10
-    return f"{hours:d}:{minutes:02d}:{seconds:02d}.{centiseconds:02d}"
 
-def create_ass_header():
+WORD_PATTERN = re.compile(r"(\S+)\s*\[\s*([^\]]+?)\s*\]")
+PUNCTUATION_BREAKS = {".", "।", "?", "!", ";", ","}
+
+
+@dataclass
+class WordTiming:
+    word: str
+    start_ms: int
+    end_ms: int
+
+
+@dataclass
+class SubtitleBlock:
+    start_ms: int
+    end_ms: int
+    words: Sequence[WordTiming]
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Create karaoke-style ASS subtitles from timestamped words."
+    )
+    parser.add_argument("input", type=Path, help="Timestamped word file (output of create_reel_timestamps.py).")
+    parser.add_argument("output", type=Path, help="Destination ASS file.")
+    parser.add_argument("--max-words-per-line", type=int, default=3, help="Maximum words per subtitle line (default: 3).")
+    parser.add_argument("--min-word-duration", type=int, default=300, help="Minimum word duration in milliseconds (default: 300).")
+    parser.add_argument("--line-padding", type=int, default=120, help="Extra padding (ms) added to each line for readability (default: 120).")
+    parser.add_argument("--highlight-interval", type=int, default=4, help="Highlight every Nth word in accent colour (default: 4).")
+    return parser.parse_args()
+
+
+def load_words(timestamp_file: Path) -> List[WordTiming]:
+    content = ensure_readable_file(timestamp_file, "timestamp file").read_text(encoding="utf-8").strip()
+    matches = WORD_PATTERN.findall(content)
+    if not matches:
+        raise ScriptError(f"No timestamp patterns found in {timestamp_file}.")
+
+    raw_timings = []
+    for word, relative in matches:
+        start_ms = parse_relative_timestamp(relative)
+        raw_timings.append((word, start_ms))
+
+    raw_timings.sort(key=lambda item: item[1])
+
+    timings: List[WordTiming] = []
+    for idx, (word, start_ms) in enumerate(raw_timings):
+        next_start = raw_timings[idx + 1][1] if idx + 1 < len(raw_timings) else start_ms
+        timings.append(WordTiming(word, start_ms, next_start))
+
+    return timings
+
+
+def enforce_minimum_durations(words: List[WordTiming], min_duration: int) -> None:
+    for idx, word in enumerate(words):
+        next_start = words[idx + 1].start_ms if idx + 1 < len(words) else word.start_ms + min_duration
+        target_end = max(word.start_ms + min_duration, next_start)
+        if target_end <= word.start_ms:
+            target_end = word.start_ms + min_duration
+        word.end_ms = target_end
+
+
+def build_blocks(
+    words: Sequence[WordTiming],
+    max_words: int,
+    line_padding: int,
+) -> List[SubtitleBlock]:
+    blocks: List[SubtitleBlock] = []
+    current: List[WordTiming] = []
+
+    def finalize_block(buffer: List[WordTiming]) -> None:
+        if not buffer:
+            return
+        start_ms = buffer[0].start_ms
+        end_ms = max(buffer[-1].end_ms + line_padding, start_ms + line_padding)
+        blocks.append(SubtitleBlock(start_ms, end_ms, list(buffer)))
+
+    for idx, word in enumerate(words):
+        current.append(word)
+        is_last_word = idx == len(words) - 1
+        if (
+            len(current) >= max_words
+            or word.word[-1] in PUNCTUATION_BREAKS
+            or is_last_word
+        ):
+            finalize_block(current)
+            current = []
+
+    return blocks
+
+
+def build_highlighted_text(
+    block: SubtitleBlock,
+    highlight_interval: int,
+) -> str:
+    parts: List[str] = []
+    for i, word in enumerate(block.words):
+        duration_cs = max(10, (word.end_ms - word.start_ms) // 10)
+        if highlight_interval > 0 and (i % highlight_interval == 0):
+            parts.append(f"{{\\k{duration_cs}\\c&H0000FF&}}{word.word}{{\\c&H00FFFFFF&}}")
+        else:
+            parts.append(f"{{\\k{duration_cs}}}{word.word}")
+    parts.append("{\\k0}")
+    return " ".join(parts)
+
+
+def create_ass_header() -> str:
     return """[Script Info]
 ; Enhanced subtitle with word highlighting
 ScriptType: v4.00+
@@ -37,84 +143,36 @@ Style: EnhancedSub,Noto Sans Bengali,75,&H00FFFFFF,&H0000FF00,&H80000000,&H00000
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
 
-def build_highlighted_text(words_with_timing):
-    """Build ASS text with word-level highlighting"""
-    parts = []
-    
-    for i, (word, start_ms, end_ms) in enumerate(words_with_timing):
-        # Calculate duration for this word in centiseconds
-        duration_cs = max(10, (end_ms - start_ms) // 10)
-        
-        # Alternate between green and red highlighting (every 4th word gets red)
-        if i % 4 == 0:
-            # Red highlight for emphasis
-            parts.append(f"{{\\k{duration_cs}\\c&H0000FF&}}{word}{{\\c&H00FFFFFF&}}")
-        else:
-            # Green highlight (default secondary color)
-            parts.append(f"{{\\k{duration_cs}}}{word}")
-    
-    # Add final reset
-    parts.append("{\\k0}")
-    return " ".join(parts)
 
-def convert_text_to_enhanced_ass(input_file, output_file):
-    with open(input_file, 'r', encoding='utf-8') as f:
-        content = f.read().strip()
-    
-    # Extract words and timestamps
-    pattern = r'(\S+)\s*\[\s*([^]]+)\s*\]'
-    matches = re.findall(pattern, content)
-    
-    if not matches:
-        print("No timestamp patterns found")
-        return
-    
-    # Group words into subtitle blocks (2-3 words each)
-    subtitle_blocks = []
-    current_block = []
-    current_word_timings = []
-    
-    # Get the first timestamp to calculate offset
-    start_offset_ms = parse_timestamp(matches[0][1]) if matches else 0
-    
-    for i, (word, timestamp) in enumerate(matches):
-        ms = parse_timestamp(timestamp) - start_offset_ms  # Subtract offset to start from 0
-        current_block.append(word)
-        current_word_timings.append((word, ms, ms + 400))  # Default 400ms per word
-        
-        # Create subtitle block every 2-3 words
-        if (len(current_block) >= 3 or 
-            word.endswith(('.', '।', '?', '!')) or
-            i == len(matches) - 1):
-            
-            block_start = current_word_timings[0][1]
-            block_end = current_word_timings[-1][2]
-            
-            # Build highlighted text
-            highlighted_text = build_highlighted_text(current_word_timings)
-            
-            subtitle_blocks.append({
-                'start': block_start,
-                'end': block_end,
-                'text': highlighted_text
-            })
-            
-            current_block = []
-            current_word_timings = []
-    
-    # Write ASS file
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(create_ass_header())
-        
-        for block in subtitle_blocks:
-            line = f"Dialogue: 0,{ms_to_ass_time(block['start'])},{ms_to_ass_time(block['end'])},EnhancedSub,,0,0,0,,{block['text']}\n"
-            f.write(line)
-    
-    print(f"Converted {len(subtitle_blocks)} enhanced subtitle blocks to {output_file}")
+def write_ass(
+    blocks: Iterable[SubtitleBlock],
+    output_path: Path,
+    highlight_interval: int,
+) -> None:
+    ensure_writable_parent(output_path)
+    with output_path.open("w", encoding="utf-8") as handle:
+        handle.write(create_ass_header())
+        for block in blocks:
+            start = milliseconds_to_ass_time(block.start_ms)
+            end = milliseconds_to_ass_time(block.end_ms)
+            text = build_highlighted_text(block, highlight_interval)
+            handle.write(f"Dialogue: 0,{start},{end},EnhancedSub,,0,0,0,,{text}\n")
+
+
+def main() -> None:
+    args = parse_args()
+    try:
+        words = load_words(args.input)
+        enforce_minimum_durations(words, max(args.min_word_duration, 50))
+        blocks = build_blocks(words, max(args.max_words_per_line, 1), max(args.line_padding, 0))
+        write_ass(blocks, args.output, max(args.highlight_interval, 0))
+        print(f"✅ Created {args.output} with {len(blocks)} subtitle blocks.")
+
+    except ScriptError as error:
+        echo_error_and_exit(str(error))
+    except Exception as error:  # pragma: no cover
+        echo_error_and_exit(f"Unexpected error: {error}")
+
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python text_to_enhanced_ass.py input.txt output.ass")
-        sys.exit(1)
-    
-    convert_text_to_enhanced_ass(sys.argv[1], sys.argv[2])
+    main()

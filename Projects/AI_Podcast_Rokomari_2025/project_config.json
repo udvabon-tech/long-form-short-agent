@@ -1,0 +1,48 @@
+{
+  "project_root": ".",
+  "transcript": "Transcripts/podcast_audio_30min_transcription.txt",
+  "reels": [
+    {
+      "id": "reel1",
+      "start": "00:15:47.364",
+      "end": "00:17:01.374",
+      "title": "আপনার মস্তিষ্ক অকেজো হচ্ছে?",
+      "subtitle": "AI ব্যবহারে মস্তিষ্কের ক্ষমতা কমে যায়",
+      "video_duration": "0:01:14.00",
+      "title_duration": 5.0,
+      "title_position_y": 120,
+      "subtitle_position_y": 960,
+      "word_output": "Processing/reel1_words.txt",
+      "ass_output": "Processing/reel1_tiktok.ass",
+      "final_output": "Output/Final_আপনার_মস্তিষ্ক_অকেজো_হচ্ছে.mkv"
+    },
+    {
+      "id": "reel2",
+      "start": "00:09:20.914",
+      "end": "00:10:05.974",
+      "title": "AI নিয়ন্ত্রণ হারালে কী হবে?",
+      "subtitle": "মানবজাতির ভবিষ্যৎ বিপদে পড়বে",
+      "video_duration": "0:00:45.00",
+      "title_duration": 5.0,
+      "title_position_y": 120,
+      "subtitle_position_y": 960,
+      "word_output": "Processing/reel2_words.txt",
+      "ass_output": "Processing/reel2_tiktok.ass",
+      "final_output": "Output/Final_AI_নিয়ন্ত্রণ_হারালে_কী_হবে.mkv"
+    },
+    {
+      "id": "reel3",
+      "start": "00:29:09.834",
+      "end": "00:29:42.234",
+      "title": "সেরা ব্রেইন মাত্র ২৫০০ টাকায়",
+      "subtitle": "AI দিয়ে যেকোনো কাজ করান",
+      "video_duration": "0:00:32.00",
+      "title_duration": 5.0,
+      "title_position_y": 120,
+      "subtitle_position_y": 960,
+      "word_output": "Processing/reel3_words.txt",
+      "ass_output": "Processing/reel3_tiktok.ass",
+      "final_output": "Output/Final_সেরা_ব্রেইন_মাত্র_২৫০০_টাকায়.mkv"
+    }
+  ]
+}

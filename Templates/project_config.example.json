@@ -1,0 +1,19 @@
+{
+  "project_root": "Projects/Your_Project_Name",
+  "transcript": "Transcripts/audio_30min_transcription.txt",
+  "reels": [
+    {
+      "id": "reel1",
+      "start": "00:15:47.364",
+      "end": "00:17:01.374",
+      "title": "আপনার মস্তিষ্ক অকেজো হচ্ছে?",
+      "subtitle": "AI ব্যবহারে মস্তিষ্কের ক্ষমতা কমে যায়",
+      "video_duration": "0:01:14.00",
+      "title_duration": 5.0,
+      "title_position_y": 120,
+      "subtitle_position_y": 960,
+      "word_output": "Processing/reel1_words.txt",
+      "ass_output": "Processing/reel1_tiktok.ass"
+    }
+  ]
+}

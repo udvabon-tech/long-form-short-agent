@@ -30,9 +30,12 @@ build/
 Projects/*/Source/*
 Projects/*/Transcripts/*.mp3
 Projects/*/Transcripts/*.wav
+Projects/*/Transcripts/*.txt
 Projects/*/Processing/*
 Projects/*/Output/*.mkv
 Projects/*/Output/*.mp4
+Projects/*/Logs/*.log
+Projects/*/Logs/*.json
 
 # Keep folder structure but ignore contents
 !Projects/*/Source/.gitkeep
@@ -40,6 +43,7 @@ Projects/*/Output/*.mp4
 !Projects/*/Analysis/.gitkeep
 !Projects/*/Processing/.gitkeep
 !Projects/*/Output/.gitkeep
+!Projects/*/Logs/.gitkeep
 
 # Temporary Files
 *.tmp
