@@ -63,6 +63,20 @@ print(f"Output: Projects/My_Podcast_2025/Output/")
 - ✅ Quality validation
 - ✅ Final reel assembly
 
+### 🎨 Launch the Interactive Studio (Front-End)
+
+Prefer a visual control room? Spin up the Streamlit interface to run the same pipeline with an intuitive two-panel layout (controls on the left, live status & outputs on the right):
+
+```bash
+pip install -r requirements.txt
+streamlit run frontend/streamlit_app.py
+```
+
+Inside the studio you can:
+- Upload a long-form video/podcast and fire the pipeline with one click
+- Monitor per-stage progress, logs, and Gemini status in real time
+- Preview generated reels, transcripts, and metrics without leaving the browser
+
 ---
 
 ## 🏗️ Architecture

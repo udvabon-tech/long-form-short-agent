@@ -4,6 +4,7 @@
 # Core Dependencies
 google-generativeai>=0.8.0  # Gemini API for transcription and analysis
 pyyaml>=6.0                  # Configuration management
+streamlit>=1.32              # Interactive front-end
 
 # Optional but recommended
 # rich>=13.0                 # Enhanced CLI output (uncomment to enable)

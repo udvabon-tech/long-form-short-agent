@@ -95,10 +95,8 @@ pipeline:
     - audio_extraction
     - transcription
     - analysis
-    - segment_extraction
-    - timestamp_generation
-    - subtitle_creation
-    - subtitle_hardburn
+    - video_processing
+    - subtitle_generation
     - finalization
 
   # Stage-specific settings
