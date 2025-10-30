@@ -1,0 +1,6 @@
+.DS_Store
+Processing/
+Output/
+*.mp4
+*.mkv
+*.mov
