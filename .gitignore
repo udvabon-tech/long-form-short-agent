@@ -1,6 +1,25 @@
 .DS_Store
 Processing/
 Output/
+Input/
+Archive/
+Projects/*/Source/
+Projects/*/Processing/
+Projects/*/Output/
+Projects/*/Logs/
+Projects/*/Transcripts/*.mp3
+Projects/*/Transcripts/*.wav
+
+# Large media artifacts
 *.mp4
 *.mkv
 *.mov
+*.mp3
+*.wav
+*.flac
+
+# Editor junk
+*.tmp
+*.swp
+*.swo
+*~

@@ -1,235 +1,146 @@
-# Long Form to Shorts
+# Long Form to Shorts Toolkit
 
-Convert long-form videos into short-form content (reels/shorts) with automated Bengali subtitles.
+Create production-ready Bengali short-form content from long podcasts with two complementary workflows:
 
-## Installation & Setup
+1. **Video → Transcript** – Split, transcribe, and clean long-form audio with Gemini.
+2. **Transcript → Reel** – Generate vertical reels with styled Bengali subtitles.
 
-### 1. Download Files
+Both flows live in this repository so you can reliably respond when someone asks, “Can you transcribe the audio?” *and* “Can you turn this moment into a reel?”
 
-You need only these files:
-```
-your-folder/
-├── create_reel.py      # Main script
-├── your_video.mp4      # Source video
-├── transcript.txt      # Transcript with timestamps
-└── README.md          # This documentation (optional)
-```
+---
 
-### 2. Install System Requirements
+## Repository Contents
 
-**Python 3.7+** (usually pre-installed)
-```bash
-python3 --version
-```
+- `create_reel.py` – Python script that cuts clips and applies Bengali subtitles.
+- `video_to_transcript.md` – Full Gemini-based transcription workflow, including prompts and QA steps.
+- `AI_fascination_complete_transcription copy.txt` – Example transcript produced with the workflow.
+- `README.md` – This quick-start guide.
+- `Processing/`, `Output/` – Auto-generated scratch folders (ignored in Git).
 
-**FFmpeg** (required for video processing)
-```bash
-# macOS
-brew install ffmpeg
+---
 
-# Ubuntu/Debian
-sudo apt update && sudo apt install ffmpeg
+## Environment Setup
 
-# Windows
-# Download from https://ffmpeg.org/download.html
-```
+| Requirement | Why you need it | Check |
+|-------------|-----------------|-------|
+| Python 3.8+ | Runs helper scripts | `python3 --version` |
+| FFmpeg (with libass) | Audio extraction + video rendering | `ffmpeg -version \| grep libass` |
+| Gemini API key (optional but required for transcription) | Access to Google Generative AI models | `export GEMINI_API_KEY="..."` |
+| Bengali fonts (e.g., Noto Sans Bengali) | Clean subtitle rendering | macOS already ships; Linux: `sudo apt install fonts-noto-bengali` |
 
-**Bengali Font** (for subtitle rendering)
-```bash
-# macOS - usually pre-installed
+Install FFmpeg via `brew install ffmpeg` (macOS) or `sudo apt install ffmpeg` (Linux). Windows users can download binaries from [ffmpeg.org](https://ffmpeg.org/download.html).
 
-# Ubuntu/Debian
-sudo apt install fonts-noto-bengali
-
-# Windows
-# Download Noto Sans Bengali from https://fonts.google.com/noto/specimen/Noto+Sans+Bengali
-```
-
-### 3. Verify Installation
-
-```bash
-# Check Python
-python3 --version
-
-# Check FFmpeg (must include libass for subtitles)
-ffmpeg -version | grep libass
-
-# Should show: --enable-libass
-```
+---
 
 ## Quick Start
 
-### Basic Usage
+### 1. Transcribe a Long Video
+1. Create a project folder (e.g., `Projects/MyPodcast`).
+2. Follow **Video to Transcript - Complete Workflow** (`video_to_transcript.md`) to:
+   - Extract audio and split into manageable chunks.
+   - Invoke `Scripts/transcribe_audio_v2.py` with the provided prompts.
+   - Merge the partial transcripts into a single, chronologically correct file.
+3. Validate timestamps and clean up temporary assets.
 
+The guide includes copy/paste prompts, timestamp fix scripts, and QA tips. Keep the resulting `complete_transcription.txt`—you’ll use it for reel generation.
+> **Note:** The workflow assumes access to the agent utilities under `Scripts/` (from the full Long Form to Shorts system). If you only need the process outline, substitute the transcription step with your own Gemini API client that accepts custom prompts.
+
+### 2. Create a Reel from a Timestamp Range
 ```bash
-python3 create_reel.py video.mp4 transcript.txt "14:21.843" "16:18.063" "Title Text"
-```
-
-### Complete Example
-
-```bash
-# Create a 30-second reel
 python3 create_reel.py \
-  my_podcast.mp4 \
-  my_transcript.txt \
+  "../AI ফ্যাসিনেশন the 3 destination.mp4" \
+  "AI_fascination_complete_transcription copy.txt" \
   "14:21.843" \
-  "14:51.843" \
-  "AI এর জগৎ" \
-  --output "ai_discussion"
+  "16:18.063" \
+  "অটোনোমাস AI  Agent"
 ```
 
-**What happens:**
-1. Script extracts 30-second video segment (14:21.843 to 14:51.843)
-2. Generates Bengali subtitles from transcript
-3. Creates TikTok-format video (608x1080)
-4. Outputs final reel: `Output/ai_discussion.mkv`
+What the script does:
+- Crops the vertical video segment (`Processing/reel_*_segment.mp4`).
+- Generates Bengali subtitle events (`Processing/reel_*.ass`).
+- Overlays the title (auto-wrapped, multi-line) and subtitles.
+- Delivers the final reel at `Output/reel_<start>_to_<end>.mkv`.
 
-## Arguments
+---
 
-- `video.mp4` - Source video file
-- `transcript.txt` - Transcript with timestamps (see format below)
-- `"14:21.843"` - Start time (MM:SS.mmm or HH:MM:SS.mmm)
-- `"16:18.063"` - End time (MM:SS.mmm or HH:MM:SS.mmm)
-- `"Title Text"` - Bengali title for overlay
-- `--output name` - Optional custom name (default: auto-generated)
+## Detailed Usage
 
-## Transcript Format
-
-Your transcript file must have this format:
-
+### Transcript Format Expectations
 ```
 [14:21.843] Speaker 1: কোডেক্স হচ্ছে আপনি একটা কোড বেজ ওকে কানেক্ট করে দিবেন।
 [14:25.123] Speaker 2: অনলাইনে যে কোড বেজ রাখে, ওইটাকে বলে হচ্ছে গিটহাব।
 [14:28.456] Speaker 1: গিটহাবে সফটওয়্যারের মেইন কোডগুলা থাকে।
 ```
+- Timestamps must be chronological (`[MM:SS.mmm]` or `[HH:MM:SS.mmm]`).
+- Speaker labels can be any consistent format.
+- Text should be UTF-8 encoded Bengali (or English when needed).
 
-**Required:**
-- Timestamps in `[MM:SS.mmm]` or `[HH:MM:SS.mmm]` format
-- Speaker labels (any format)
-- Bengali or English text after colon
+### create_reel.py Arguments
 
-## Output
+| Argument | Description |
+|----------|-------------|
+| `video` | Source video file path. |
+| `transcript` | Transcript file with timestamps. |
+| `start`, `end` | Clip boundaries (same format as transcript timestamps). |
+| `title` | Overlay title (auto-wrapped, multi-line). |
+| `--output` | Optional basename for generated files. |
 
-**Generated files:**
-```
-Processing/         # Auto-created temporary files
-├── words.txt       # Extracted words with timing
-├── subtitles.ass   # Subtitle file
-└── segment.mp4     # Video segment
-
-Output/             # Auto-created final output
-└── your_reel.mkv   # Final reel (ready for social media)
-```
-
-**Video specs:**
-- **Resolution:** 608x1080 (TikTok/Instagram format)
-- **Subtitles:** Bengali text, 3-4 words per line
-- **Title:** Fixed overlay at top
-- **Format:** .mkv (works on all platforms)
-
-## Troubleshooting
-
-### "FFmpeg not found"
-```bash
-# Install FFmpeg first
-brew install ffmpeg  # macOS
-sudo apt install ffmpeg  # Linux
-
-# Verify installation
-ffmpeg -version
-```
-
-### "Font not found" or broken Bengali text
-```bash
-# Linux - install Bengali fonts
-sudo apt install fonts-noto-bengali
-
-# macOS - font usually pre-installed
-# Windows - download from Google Fonts
-```
-
-### "No words found in time range"
-- Check transcript file format
-- Verify timestamps are correct
-- Ensure time range exists in transcript
-
-### Video processing errors
-```bash
-# Check if video file exists and is readable
-ffprobe your_video.mp4
-
-# Verify FFmpeg has libass support (for subtitles)
-ffmpeg -version | grep libass
-```
-
-## Advanced Usage
-
-### Custom output name
-```bash
-python3 create_reel.py video.mp4 transcript.txt "5:00" "5:30" "Title" --output "my_reel"
-# Creates: Output/my_reel.mkv
-```
-
-### Longer segments
-```bash
-# 2-minute reel
-python3 create_reel.py video.mp4 transcript.txt "10:00" "12:00" "দীর্ঘ আলোচনা"
-```
-
-### Different timestamp formats
-```bash
-# Both formats work
-python3 create_reel.py video.mp4 transcript.txt "5:30.500" "6:00.750" "Title"  # MM:SS.mmm
-python3 create_reel.py video.mp4 transcript.txt "1:05:30.500" "1:06:00.750" "Title"  # HH:MM:SS.mmm
-```
-
-## Title Guidelines
-
-**Good titles (3-5 words):**
-- ✅ "AI এর ভবিষ্যৎ" (3 words)
-- ✅ "আপনার মস্তিষ্ক অকেজো হচ্ছে?" (4 words)
-- ✅ "সেরা ব্রেইন মাত্র ২৫০০ টাকায়" (5 words)
-
-**Avoid long titles:**
-- ❌ "AI ব্যবহারে আপনার মস্তিষ্ক কি অকেজো হয়ে যাচ্ছে?" (Too long)
-
-## File Organization
-
-**Minimal setup:**
-```
-your-project/
-├── create_reel.py
-├── podcast.mp4
-├── transcript.txt
-├── Processing/    # Auto-created
-└── Output/        # Auto-created
-```
-
-**Multiple projects:**
-```
-reels/
-├── create_reel.py
-├── Project1/
-│   ├── video1.mp4
-│   ├── transcript1.txt
-│   └── Output/
-├── Project2/
-│   ├── video2.mp4
-│   ├── transcript2.txt
-│   └── Output/
-```
-
-## License
-
-This tool is for creating social media content. Ensure you have rights to the source material.
+### Title Overlay Tips
+- Keep to 2–3 short lines; the script wraps at ~14 characters per line.
+- Avoid excessive punctuation to reduce wrap artifacts.
+- If you need different wrapping, adjust `wrap_title_text` in `create_reel.py`.
 
 ---
 
-**Need help?** Check that:
-1. Python 3.7+ is installed
-2. FFmpeg is installed with libass support
-3. Bengali fonts are installed
-4. Transcript format is correct
-5. Video and transcript files exist
+## Workflow in Practice
 
-**Happy Reel Making! 🎬**
+1. **When asked to transcribe audio**  
+   - Run through the steps in `video_to_transcript.md`.  
+   - Store outputs in `Projects/<Name>/complete_transcription.txt`.  
+   - Share QA snippet timestamps to prove accuracy.
+
+2. **When asked to generate a reel**  
+   - Point `create_reel.py` at the original video and the transcript you just prepared.  
+   - Re-run the script for every interesting clip a stakeholder requests.  
+   - Deliver `.mkv` output or convert to `.mp4` with `ffmpeg -i output.mkv output.mp4`.
+
+3. **Hand-off checklist**  
+   - Provide the final transcript + the reel(s).  
+   - Include the `Processing/` artifacts only if troubleshooting is needed (ignored by default).  
+   - Keep prompt files if you customized them—they help reproduce the transcript.
+
+---
+
+## Troubleshooting Cheatsheet
+
+- **FFmpeg not found** – Install and verify `ffmpeg -version`.  
+- **libass missing** – Ensure FFmpeg build includes subtitle support.  
+- **Subtitle text misaligned** – Confirm transcript timestamps are monotonic.  
+- **Title off-screen** – Edit `wrap_title_text` granularity or adjust `\pos` in the ASS template.  
+- **Gemini API errors** – Split audio into smaller chunks, re-run failed part, then merge.
+
+---
+
+## Recommended Project Structure
+
+```
+Projects/
+└── MyPodcast/
+    ├── Source/
+    │   └── original_video.mp4
+    ├── Transcripts/
+    │   ├── part1_transcription.txt
+    │   ├── part2_transcription.txt
+    │   └── complete_transcription.txt
+    ├── Processing/
+    └── Output/
+```
+
+Keep heavy media artifacts out of Git; only commit scripts, prompts, and final transcripts.
+
+---
+
+**Need assistance?**  
+Start with `video_to_transcript.md` for transcription nuance, then run `create_reel.py` with the resulting timestamps. Once both workflows are familiar, you can confidently answer either request: “Give me the transcript” or “Give me the reel.”  
+
+**Happy Transcribing and Reel Making! 🎬** 
